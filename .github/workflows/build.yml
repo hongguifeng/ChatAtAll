@@ -65,12 +65,19 @@ jobs:
             dist/*.AppImage
             dist/*.deb
 
+      - name: List dist directory
+        shell: bash
+        run: ls -la dist/
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           draft: false
           prerelease: false
           files: |
-            ${{ matrix.os == 'windows-latest' && 'dist/*.exe' || matrix.os == 'macos-latest' && 'dist/*.dmg' || 'dist/*.AppImage dist/*.deb' }}
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
