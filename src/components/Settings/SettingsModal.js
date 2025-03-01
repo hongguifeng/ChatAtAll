@@ -6,6 +6,7 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
     apiKey: settings.apiKey || '',
     proxyUrl: settings.proxyUrl || '',
     model: settings.model || 'gpt-3.5-turbo',
+    customModel: settings.customModel || '',
   });
   
   const handleChange = (e) => {
@@ -18,7 +19,11 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formValues);
+    const finalFormValues = {
+      ...formValues,
+      model: formValues.model === 'custom' ? formValues.customModel : formValues.model,
+    };
+    onSave(finalFormValues);
   };
   
   const models = [
@@ -27,6 +32,7 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
     { id: 'gpt-4o', name: 'GPT-4o' },
     { id: 'gpt-4o-mini', name: 'GPT-4o-mini' },
     { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
+    { id: 'custom', name: '自定义模型' },
   ];
   
   return (
@@ -78,6 +84,17 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
                 </option>
               ))}
             </select>
+            {formValues.model === 'custom' && (
+              <input
+                type="text"
+                id="customModel"
+                name="customModel"
+                value={formValues.customModel}
+                onChange={handleChange}
+                placeholder="请输入自定义模型名称"
+                className="mt-2"
+              />
+            )}
           </div>
           
           <div className="form-actions">
