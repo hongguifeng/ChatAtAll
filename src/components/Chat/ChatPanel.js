@@ -93,9 +93,17 @@ const ChatPanel = ({ session }) => {
             <p>开始发送消息与AI助手交流吧</p>
           </div>
         ) : (
-          session.messages.map((message, index) => (
-            <Message key={index} message={message} />
-          ))
+          session.messages.map((message, index) => {
+            const selectedConfig = settings.apiConfigs[selectedConfigIndex];
+            return (
+              <Message
+                key={index}
+                message={message}
+                modelName={selectedConfig.model}
+                configName={selectedConfig.name}
+              />
+            );
+          })
         )}
       </div>
       

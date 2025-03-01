@@ -2,7 +2,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { FaUser, FaRobot } from 'react-icons/fa';
 
-const Message = ({ message }) => {
+const Message = ({ message, modelName, configName }) => {
   const { role, content, timestamp, isError } = message;
   const isUser = role === 'user';
   
@@ -13,7 +13,7 @@ const Message = ({ message }) => {
       </div>
       <div className="message-content">
         <div className="message-header">
-          <span className="message-author">{isUser ? '您' : 'ChatGPT'}</span>
+          <span className="message-author">{isUser ? '您' : `${modelName} | ${configName}`}</span>
           <span className="message-time">
             {new Date(timestamp).toLocaleTimeString()}
           </span>
