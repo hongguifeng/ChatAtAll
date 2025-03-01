@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { useSettings } from './SettingsContext';
-import { fetchChatCompletion } from '../services/openai';
+import { fetchChatCompletion, fetchStreamingChatCompletion } from '../services/openai';
 
 const ChatContext = createContext();
 
@@ -22,24 +22,55 @@ export function ChatProvider({ children }) {
       
       // 使用选定的配置调用API获取回复
       const config = selectedConfig || settings.apiConfigs[0] || settings;
-      const response = await fetchChatCompletion(
+      
+      // 创建一个空的AI回复消息
+      const assistantMessage = { 
+        role: 'assistant', 
+        content: '', 
+        timestamp: Date.now(),
+        isStreaming: true // 标记为正在流式输出
+      };
+      
+      // 添加初始空回复到历史记录
+      const messagesWithEmptyReply = [...updatedMessages, assistantMessage];
+      callback(messagesWithEmptyReply);
+      
+      // 使用流式API
+      let fullContent = '';
+      await fetchStreamingChatCompletion(
         config.apiKey,
         config.proxyUrl,
         config.model,
-        updatedMessages.map(msg => ({ role: msg.role, content: msg.content }))
+        updatedMessages.map(msg => ({ role: msg.role, content: msg.content })),
+        (chunk, content) => {
+          fullContent = content; // 保存完整内容
+          // 每次收到新内容时更新消息
+          const updatedAssistantMessage = {
+            ...assistantMessage,
+            content: content,
+          };
+          
+          const latestMessages = [
+            ...updatedMessages,
+            updatedAssistantMessage
+          ];
+          
+          callback(latestMessages);
+        }
       );
       
-      // 添加AI回复到历史记录
+      // 流式输出完成后，更新最终消息并移除流式标记
+      const finalAssistantMessage = {
+        ...assistantMessage,
+        content: fullContent,
+        isStreaming: false
+      };
+      
       const finalMessages = [
         ...updatedMessages,
-        { 
-          role: 'assistant', 
-          content: response, 
-          timestamp: Date.now() 
-        },
+        finalAssistantMessage
       ];
       
-      // 更新UI显示完整对话
       callback(finalMessages);
     } catch (error) {
       console.error('发送消息失败:', error);
