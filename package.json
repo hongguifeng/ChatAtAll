@@ -12,7 +12,9 @@
     "eject": "react-scripts eject",
     "electron-dev": "concurrently \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && electron .\"",
     "electron-pack": "electron-builder",
-    "dist": "npm run build && npm run electron-pack"
+    "dist": "npm run build && npm run electron-pack",
+    "version": "git add -A",
+    "postversion": "git push && git push --tags"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.5",
