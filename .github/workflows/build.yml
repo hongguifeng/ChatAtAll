@@ -35,8 +35,15 @@ jobs:
 
       # 修改构建命令
       - name: Build React app
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
         run: |
-          cross-env CI=false npm run build
+          npm install -g npm@latest
+          npm cache clean --force
+          rm -rf node_modules
+          rm -rf build
+          npm install
+          npm run build
 
       # 执行electron打包
       - name: Build electron app
