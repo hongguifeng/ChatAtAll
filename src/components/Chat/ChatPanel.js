@@ -39,6 +39,7 @@ const ChatPanel = ({ session }) => {
       }
     }
   }, [settings.apiConfigs, session]); // 移除selectedConfigIndex依赖
+
   const handleSendMessage = () => {
     if (!inputValue.trim() || !session) return;
     

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FaUser, FaRobot, FaRedoAlt, FaChevronLeft, FaChevronRight, FaCodeBranch, FaPen, FaCheck, FaTimes } from 'react-icons/fa';
 import { useChat } from '../../contexts/ChatContext';
 import { useApp } from '../../contexts/AppContext';
@@ -64,6 +66,69 @@ const Message = ({ message, modelName, configName, index }) => {
     setEditedContent(content);
   };
   
+  // 代码高亮组件
+  const CodeBlock = ({ node, inline, className, children, ...props }) => {
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : '';
+    const codeString = String(children).replace(/\n$/, '');
+    
+    // 复制代码到剪贴板
+    const copyToClipboard = (text) => {
+      navigator.clipboard.writeText(text).then(
+        () => {
+          // 复制成功提示
+          const button = document.activeElement;
+          if (button) {
+            const originalText = button.textContent;
+            button.textContent = '已复制!';
+            setTimeout(() => {
+              button.textContent = originalText;
+            }, 2000);
+          }
+        },
+        (err) => {
+          console.error('复制失败:', err);
+        }
+      );
+    };
+    
+    return !inline && match ? (
+      <div className="code-block-container">
+        <div className="code-block-header">
+          <span className="code-language">{language}</span>
+          <div className="code-block-header-actions">
+            <button 
+              className="copy-code-button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                copyToClipboard(codeString);
+              }}
+              aria-label="复制代码"
+            >
+              复制代码
+            </button>
+          </div>
+        </div>
+        <SyntaxHighlighter
+          style={vs}
+          language={language}
+          PreTag="div"
+          className="code-block"
+          showLineNumbers={true}
+          wrapLines={true}
+          {...props}
+        >
+          {codeString}
+        </SyntaxHighlighter>
+      </div>
+    ) : (
+      <code className={`inline-code ${className || ''}`} {...props}>
+        {children}
+      </code>
+    );
+  };
+  
   return (
     <div className={`message ${isUser ? 'user-message' : 'assistant-message'} ${isError ? 'error-message' : ''}`}>
       <div className="message-avatar">
@@ -90,7 +155,13 @@ const Message = ({ message, modelName, configName, index }) => {
               rows={Math.max(3, editedContent.split("\n").length)}
             />
           ) : (
-            <ReactMarkdown>{content}</ReactMarkdown>
+            <ReactMarkdown
+              components={{
+                code: CodeBlock
+              }}
+            >
+              {content}
+            </ReactMarkdown>
           )}
         </div>
         {isUser && (

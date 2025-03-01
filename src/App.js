@@ -142,7 +142,7 @@ function App() {
         handleNewSession,
         deleteSession,
         renameSession,
-        updateSessionMessages,
+        updateSessionMessages
       }}
     >
       <SettingsProvider value={{ settings, saveSettings }}>
