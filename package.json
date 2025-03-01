@@ -1,6 +1,10 @@
 {
   "name": "ChatAtAll",
   "version": "2.0.6",
+  "author": {
+    "name": "hongguifeng",
+    "email": "hongguifeng@gmail.com"
+  },
   "description": "ChatGPT客户端应用，基于Electron和React构建",
   "main": "public/electron.js",
   "homepage": "./",
