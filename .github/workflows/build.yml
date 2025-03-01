@@ -39,8 +39,13 @@ jobs:
           NODE_OPTIONS: "--max_old_space_size=4096"
         run: |
           npm cache clean --force
-          rm -rf node_modules
-          rm -rf build
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            rmdir /s /q node_modules 2> nul || true
+            rmdir /s /q build 2> nul || true
+          else
+            rm -rf node_modules
+            rm -rf build
+          fi
           npm install
           npm run build
 
