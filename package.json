@@ -1,6 +1,6 @@
 {
   "name": "ChatAtAll",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "ChatGPT客户端应用，基于Electron和React构建",
   "main": "public/electron.js",
   "homepage": "./",
