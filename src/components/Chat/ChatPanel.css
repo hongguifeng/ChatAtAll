@@ -145,18 +145,21 @@
   
   .message-actions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
+    gap: 10px;
     margin-top: 8px;
   }
   
   .regenerate-button {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
-    padding: 6px 10px;
+    padding: 0 10px;
+    height: 32px;
     border-radius: 4px;
-    background-color: #f0f0f0;
+    background-color: #f5f5f5;
     border: 1px solid #ddd;
     color: #333;
     font-size: 12px;
@@ -176,19 +179,20 @@
   .response-navigation {
     display: flex;
     align-items: center;
-    gap: 8px;
+    background-color: #f5f5f5;
     border: 1px solid #ddd;
     border-radius: 4px;
     overflow: hidden;
+    height: 32px;
   }
   
   .nav-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    background-color: #f0f0f0;
+    width: 32px;
+    height: 32px;
+    background-color: #f5f5f5;
     border: none;
     color: #333;
     cursor: pointer;
@@ -212,6 +216,10 @@
     font-size: 12px;
     padding: 0 8px;
     color: #666;
+    line-height: 32px;
+    background-color: #f5f5f5;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
   }
   
   .input-area {
@@ -241,7 +249,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #0084ff;
+    background-color: #52c41a;
     color: white;
     border: none;
     cursor: pointer;
@@ -263,36 +271,17 @@
     color: #666;
   }
 
-  .nav-button:hover {
-    background-color: #e0e0e0;
-  }
-
-  .nav-button:active {
-    background-color: #d0d0d0;
-  }
-
-  .nav-button.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .version-indicator {
-    font-size: 12px;
-    padding: 0 8px;
-    background-color: #f0f0f0;
-    border-left: 1px solid #ddd;
-    border-right: 1px solid #ddd;
-  }
-
   /* 编辑功能样式 */
   .edit-button {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
-    padding: 6px 12px;
+    padding: 0 12px;
+    height: 32px;
     min-width: 70px;
     border-radius: 4px;
-    background-color: #f0f0f0;
+    background-color: #f5f5f5;
     border: 1px solid #ddd;
     color: #333;
     font-size: 12px;
@@ -331,8 +320,10 @@
   .cancel-edit-button {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
-    padding: 6px 10px;
+    padding: 0 10px;
+    height: 32px;
     border-radius: 4px;
     font-size: 12px;
     cursor: pointer;
@@ -359,19 +350,11 @@
     background-color: #e8e8e8;
   }
 
-  .version-indicator {
-    font-size: 12px;
-    padding: 0 8px;
-    background-color: #f0f0f0;
-    border-left: 1px solid #ddd;
-    border-right: 1px solid #ddd;
-  }
-  
   /* 分支指示器样式 */
   .branch-indicator {
     display: inline-flex;
     align-items: center;
-    color: #0084ff;
+    color: #333;
   }
 
   /* 空状态样式 */
