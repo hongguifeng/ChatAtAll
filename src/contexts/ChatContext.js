@@ -102,7 +102,7 @@ export function ChatProvider({ children }) {
   };
 
   // 添加重新生成回复功能
-  const regenerateResponse = async (sessionId) => {
+  const regenerateResponse = async (sessionId, messageIndex = -1) => {
     if (!app || !app.sessions) return;
     
     const session = app.sessions.find(s => s.id === sessionId);
@@ -111,20 +111,33 @@ export function ChatProvider({ children }) {
     setIsLoading(true);
     
     try {
-      // 获取最后一条用户消息的索引
-      let lastUserMessageIndex = -1;
-      for (let i = session.messages.length - 1; i >= 0; i--) {
+      // 如果提供了具体的messageIndex，就使用它；否则使用最后一条消息
+      const targetMessageIndex = messageIndex >= 0 ? messageIndex : (session.messages.length - 1);
+      
+      // 检查目标消息是否是AI回复
+      if (targetMessageIndex < 0 || targetMessageIndex >= session.messages.length || 
+          session.messages[targetMessageIndex].role !== 'assistant') {
+        console.error('无法重新生成：目标消息不是AI回复');
+        return;
+      }
+      
+      // 找到该AI回复对应的上一条用户消息
+      let correspondingUserMessageIndex = -1;
+      for (let i = targetMessageIndex - 1; i >= 0; i--) {
         if (session.messages[i].role === 'user') {
-          lastUserMessageIndex = i;
+          correspondingUserMessageIndex = i;
           break;
         }
       }
       
-      if (lastUserMessageIndex === -1) return;
+      if (correspondingUserMessageIndex === -1) {
+        console.error('无法重新生成：找不到对应的用户消息');
+        return;
+      }
       
-      // 获取最后一条用户消息和之前的所有消息
-      const lastUserMessage = session.messages[lastUserMessageIndex];
-      const previousMessages = session.messages.slice(0, lastUserMessageIndex);
+      // 获取对应的用户消息和之前的所有消息
+      const userMessage = session.messages[correspondingUserMessageIndex];
+      const previousMessages = session.messages.slice(0, correspondingUserMessageIndex);
       
       // 获取与会话相关的配置和模型
       const configIndex = session.configIndex !== undefined ? session.configIndex : 0;
@@ -137,7 +150,7 @@ export function ChatProvider({ children }) {
       
       // 保存当前的AI回复到versions中，而不是替换它
       const currentMessages = [...session.messages];
-      const lastAssistantMessage = currentMessages[currentMessages.length - 1];
+      const targetAssistantMessage = currentMessages[targetMessageIndex];
       
       // 创建一个空的AI回复消息用于新生成的回复
       const newAssistantMessage = { 
@@ -146,13 +159,13 @@ export function ChatProvider({ children }) {
         timestamp: Date.now(),
         isStreaming: true,
         // 保留之前的versions，并复制currentVersionIndex和totalVersions
-        versions: lastAssistantMessage.versions || [],
+        versions: targetAssistantMessage.versions || [],
         currentVersionIndex: 0, // 新版本将是默认显示的版本（索引0）
-        totalVersions: lastAssistantMessage.versions ? lastAssistantMessage.versions.length + 1 : 1
+        totalVersions: targetAssistantMessage.versions ? targetAssistantMessage.versions.length + 1 : 1
       };
       
-      // 替换最后一条AI消息为新的空消息
-      currentMessages[currentMessages.length - 1] = newAssistantMessage;
+      // 替换目标AI消息为新的空消息
+      currentMessages[targetMessageIndex] = newAssistantMessage;
       
       // 更新UI以显示正在加载的状态
       app.updateSessionMessages(sessionId, currentMessages, configIndex, modelName);
@@ -163,7 +176,7 @@ export function ChatProvider({ children }) {
         configWithModel.apiKey,
         configWithModel.proxyUrl,
         configWithModel.model,
-        [...previousMessages, lastUserMessage].map(msg => ({ role: msg.role, content: msg.content })),
+        [...previousMessages, userMessage].map(msg => ({ role: msg.role, content: msg.content })),
         (chunk, content) => {
           fullContent = content; // 保存完整内容
           // 每次收到新内容时更新消息
@@ -172,7 +185,7 @@ export function ChatProvider({ children }) {
             content: content,
           };
           
-          currentMessages[currentMessages.length - 1] = updatedAssistantMessage;
+          currentMessages[targetMessageIndex] = updatedAssistantMessage;
           app.updateSessionMessages(sessionId, [...currentMessages], configIndex, modelName);
         }
       );
@@ -181,7 +194,7 @@ export function ChatProvider({ children }) {
       // 将新回复添加到versions数组的前面（因为我们想要显示最新的回复）
       const newVersions = [
         { content: fullContent, timestamp: Date.now() },
-        ...(lastAssistantMessage.versions || [])
+        ...(targetAssistantMessage.versions || [])
       ];
       
       const finalAssistantMessage = {
@@ -193,7 +206,7 @@ export function ChatProvider({ children }) {
         totalVersions: newVersions.length
       };
       
-      currentMessages[currentMessages.length - 1] = finalAssistantMessage;
+      currentMessages[targetMessageIndex] = finalAssistantMessage;
       app.updateSessionMessages(sessionId, [...currentMessages], configIndex, modelName);
     } catch (error) {
       console.error('重新生成回复失败:', error);
@@ -218,26 +231,36 @@ export function ChatProvider({ children }) {
   };
 
   // 切换回复版本
-  const switchResponseVersion = (sessionId, versionIndex) => {
+  const switchResponseVersion = (sessionId, versionIndex, messageIndex = -1) => {
     const session = app.sessions.find(s => s.id === sessionId);
     if (!session || session.messages.length === 0) return;
     
     const messages = [...session.messages];
-    const lastMessage = messages[messages.length - 1];
     
-    if (lastMessage.role !== 'assistant' || !lastMessage.versions || 
-        versionIndex < 0 || versionIndex >= lastMessage.versions.length) {
+    // 如果提供了具体的messageIndex，就使用它；否则使用最后一条消息
+    const targetMessageIndex = messageIndex >= 0 ? messageIndex : (messages.length - 1);
+    
+    // 检查目标索引是否有效
+    if (targetMessageIndex < 0 || targetMessageIndex >= messages.length) {
+      console.error('无效的消息索引');
+      return;
+    }
+    
+    const targetMessage = messages[targetMessageIndex];
+    
+    if (targetMessage.role !== 'assistant' || !targetMessage.versions || 
+        versionIndex < 0 || versionIndex >= targetMessage.versions.length) {
       return;
     }
     
     // 更新当前显示的版本索引和内容
     const updatedMessage = {
-      ...lastMessage,
-      content: lastMessage.versions[versionIndex].content,
+      ...targetMessage,
+      content: targetMessage.versions[versionIndex].content,
       currentVersionIndex: versionIndex
     };
     
-    messages[messages.length - 1] = updatedMessage;
+    messages[targetMessageIndex] = updatedMessage;
     app.updateSessionMessages(sessionId, messages);
   };
 

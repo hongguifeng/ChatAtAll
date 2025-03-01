@@ -156,6 +156,7 @@ const ChatPanel = ({ session }) => {
                 message={message}
                 modelName={selectedModel}
                 configName={selectedConfig.name}
+                index={index}
               />
             );
           })

@@ -4,7 +4,7 @@ import { FaUser, FaRobot, FaRedoAlt, FaChevronLeft, FaChevronRight } from 'react
 import { useChat } from '../../contexts/ChatContext';
 import { useApp } from '../../contexts/AppContext';
 
-const Message = ({ message, modelName, configName }) => {
+const Message = ({ message, modelName, configName, index }) => {
   const { role, content, timestamp, isError, versions, currentVersionIndex, totalVersions } = message;
   const isUser = role === 'user';
   const { regenerateResponse, switchResponseVersion } = useChat();
@@ -19,13 +19,13 @@ const Message = ({ message, modelName, configName }) => {
   
   const handlePrevVersion = () => {
     if (canGoPrev) {
-      switchResponseVersion(currentSessionId, versionIndex - 1);
+      switchResponseVersion(currentSessionId, versionIndex - 1, index);
     }
   };
   
   const handleNextVersion = () => {
     if (canGoNext) {
-      switchResponseVersion(currentSessionId, versionIndex + 1);
+      switchResponseVersion(currentSessionId, versionIndex + 1, index);
     }
   };
   
@@ -69,7 +69,7 @@ const Message = ({ message, modelName, configName }) => {
             )}
             <button 
               className="regenerate-button"
-              onClick={() => regenerateResponse(currentSessionId)}
+              onClick={() => regenerateResponse(currentSessionId, index)}
               title="重新生成回复"
             >
               <FaRedoAlt /> 重新生成
