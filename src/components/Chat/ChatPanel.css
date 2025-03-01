@@ -143,6 +143,34 @@
     line-height: 1.5;
   }
   
+  .message-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  
+  .regenerate-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    color: #333;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .regenerate-button:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .regenerate-button:active {
+    background-color: #d0d0d0;
+  }
+  
   .input-area {
     padding: 16px;
     border-top: 1px solid #e0e0e0;
