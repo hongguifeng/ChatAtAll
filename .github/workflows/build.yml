@@ -21,11 +21,27 @@ jobs:
           node-version: '18.x'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+      # 添加环境变量
+      - name: Set environment variables
+        shell: bash
+        run: |
+          echo "CI=false" >> $GITHUB_ENV
 
-      - name: Build app
-        run: npm run dist
+      # 安装依赖
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install -g cross-env
+
+      # 修改构建命令
+      - name: Build React app
+        run: |
+          cross-env CI=false npm run build
+
+      # 执行electron打包
+      - name: Build electron app
+        run: |
+          npm run electron-pack
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

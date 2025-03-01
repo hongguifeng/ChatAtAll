@@ -6,12 +6,13 @@
   "homepage": "./",
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "cross-env CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "electron-dev": "concurrently \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron-pack": "electron-builder",
+    "electron-pack": "electron-builder -c.extraMetadata.main=build/electron.js",
     "dist": "npm run build && npm run electron-pack",
+  "postinstall": "electron-builder install-app-deps",
     "version": "git add -A",
     "postversion": "git push && git push --tags"
   },
@@ -46,6 +47,7 @@
   },
   "build": {
     "appId": "com.example.ChatAtAll",
+    "productName": "ChatAtAll",
     "win": {
       "target": [
         "nsis",
@@ -53,6 +55,7 @@
       ]
     },
     "mac": {
+      "category": "public.app-category.productivity",
       "target": [
         "dmg",
         "zip"
@@ -62,7 +65,8 @@
       "target": [
         "AppImage",
         "deb"
-      ]
+      ],
+      "category": "Development"
     },
     "files": [
       "build/**/*",
