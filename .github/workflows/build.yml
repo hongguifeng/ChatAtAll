@@ -66,15 +66,10 @@ jobs:
             dist/*.deb
 
       - name: Create Release
-        if: startsWith(matrix.os, 'windows')
         uses: softprops/action-gh-release@v1
         with:
           draft: false
           prerelease: false
-          files: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
-            dist/*.deb
+          files: dist/${{ matrix.os == 'windows-latest' && '*.exe' || matrix.os == 'macos-latest' && '*.dmg' || '*.{AppImage,deb}' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
