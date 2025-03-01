@@ -13,7 +13,7 @@ const Message = ({ message, modelName, configName }) => {
       </div>
       <div className="message-content">
         <div className="message-header">
-          <span className="message-author">{isUser ? '您' : `${modelName} | ${configName}`}</span>
+          <span className="message-author">{isUser ? '' : `${modelName} | ${configName}`}</span>
           <span className="message-time">
             {new Date(timestamp).toLocaleTimeString()}
           </span>
