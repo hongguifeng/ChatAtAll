@@ -148,9 +148,29 @@ export function ChatProvider({ children }) {
         model: modelName
       };
       
-      // 保存当前的AI回复到versions中，而不是替换它
-      const currentMessages = [...session.messages];
-      const targetAssistantMessage = currentMessages[targetMessageIndex];
+      // 保存当前消息和后续消息作为一个分支
+      const targetAssistantMessage = session.messages[targetMessageIndex];
+      const subsequentMessages = session.messages.slice(targetMessageIndex + 1);
+      
+      // 如果之前没有分支数据，创建一个分支对象
+      if (!targetAssistantMessage.branches) {
+        targetAssistantMessage.branches = [];
+      }
+      
+      // 保存当前内容和后续消息作为一个分支
+      if (targetAssistantMessage.versions && targetAssistantMessage.versions.length > 0) {
+        const currentVersionIndex = targetAssistantMessage.currentVersionIndex || 0;
+        const currentVersion = targetAssistantMessage.versions[currentVersionIndex];
+        
+        // 只有当有后续消息存在时才创建分支
+        if (subsequentMessages.length > 0) {
+          targetAssistantMessage.branches.push({
+            content: currentVersion.content,
+            timestamp: currentVersion.timestamp,
+            subsequentMessages: [...subsequentMessages],
+          });
+        }
+      }
       
       // 创建一个空的AI回复消息用于新生成的回复
       const newAssistantMessage = { 
@@ -160,14 +180,19 @@ export function ChatProvider({ children }) {
         isStreaming: true,
         // 保留之前的versions，并复制currentVersionIndex和totalVersions
         versions: targetAssistantMessage.versions || [],
+        branches: targetAssistantMessage.branches || [],
         currentVersionIndex: 0, // 新版本将是默认显示的版本（索引0）
+        currentBranchIndex: -1, // 当前没有显示任何分支
         totalVersions: targetAssistantMessage.versions ? targetAssistantMessage.versions.length + 1 : 1
       };
       
-      // 替换目标AI消息为新的空消息
-      currentMessages[targetMessageIndex] = newAssistantMessage;
+      // 裁剪消息，只保留到当前要重新生成的AI消息
+      const currentMessages = [...session.messages.slice(0, targetMessageIndex)];
       
-      // 更新UI以显示正在加载的状态
+      // 添加新的空消息占位
+      currentMessages.push(newAssistantMessage);
+      
+      // 更新UI以显示正在加载的状态，移除后续消息
       app.updateSessionMessages(sessionId, currentMessages, configIndex, modelName);
       
       // 使用流式API获取新回复
@@ -185,8 +210,9 @@ export function ChatProvider({ children }) {
             content: content,
           };
           
-          currentMessages[targetMessageIndex] = updatedAssistantMessage;
-          app.updateSessionMessages(sessionId, [...currentMessages], configIndex, modelName);
+          const updatedMessages = [...currentMessages];
+          updatedMessages[updatedMessages.length - 1] = updatedAssistantMessage;
+          app.updateSessionMessages(sessionId, updatedMessages, configIndex, modelName);
         }
       );
       
@@ -202,12 +228,15 @@ export function ChatProvider({ children }) {
         content: fullContent,
         isStreaming: false,
         versions: newVersions,
+        branches: targetAssistantMessage.branches || [],
         currentVersionIndex: 0, // 默认显示最新生成的回复
+        currentBranchIndex: -1, // 当前没有显示任何分支
         totalVersions: newVersions.length
       };
       
-      currentMessages[targetMessageIndex] = finalAssistantMessage;
-      app.updateSessionMessages(sessionId, [...currentMessages], configIndex, modelName);
+      const finalMessages = [...currentMessages];
+      finalMessages[finalMessages.length - 1] = finalAssistantMessage;
+      app.updateSessionMessages(sessionId, finalMessages, configIndex, modelName);
     } catch (error) {
       console.error('重新生成回复失败:', error);
       // 处理错误情况
@@ -253,15 +282,40 @@ export function ChatProvider({ children }) {
       return;
     }
     
+    // 查找是否有与该版本关联的分支
+    let subsequentMessages = [];
+    const hasBranch = targetMessage.branches && 
+                      targetMessage.branches.some((branch, idx) => {
+                        if (branch.content === targetMessage.versions[versionIndex].content) {
+                          subsequentMessages = branch.subsequentMessages;
+                          // 保存当前分支索引
+                          targetMessage.currentBranchIndex = idx;
+                          return true;
+                        }
+                        return false;
+                      });
+    
     // 更新当前显示的版本索引和内容
     const updatedMessage = {
       ...targetMessage,
       content: targetMessage.versions[versionIndex].content,
-      currentVersionIndex: versionIndex
+      currentVersionIndex: versionIndex,
+      // 如果没有找到匹配的分支，设置为-1
+      currentBranchIndex: hasBranch ? targetMessage.currentBranchIndex : -1
     };
     
+    // 更新消息
     messages[targetMessageIndex] = updatedMessage;
-    app.updateSessionMessages(sessionId, messages);
+    
+    // 根据是否有分支，决定是否添加后续消息
+    if (hasBranch && subsequentMessages.length > 0) {
+      // 截断到当前消息，然后添加分支中的后续消息
+      const trimmedMessages = messages.slice(0, targetMessageIndex + 1);
+      app.updateSessionMessages(sessionId, [...trimmedMessages, ...subsequentMessages]);
+    } else {
+      // 如果没有分支，则只更新当前消息，并移除所有后续消息
+      app.updateSessionMessages(sessionId, messages.slice(0, targetMessageIndex + 1));
+    }
   };
 
   return (

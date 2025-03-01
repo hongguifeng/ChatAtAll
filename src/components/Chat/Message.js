@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import { FaUser, FaRobot, FaRedoAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaUser, FaRobot, FaRedoAlt, FaChevronLeft, FaChevronRight, FaCodeBranch } from 'react-icons/fa';
 import { useChat } from '../../contexts/ChatContext';
 import { useApp } from '../../contexts/AppContext';
 
 const Message = ({ message, modelName, configName, index }) => {
-  const { role, content, timestamp, isError, versions, currentVersionIndex, totalVersions } = message;
+  const { role, content, timestamp, isError, versions, currentVersionIndex, totalVersions, branches, currentBranchIndex } = message;
   const isUser = role === 'user';
   const { regenerateResponse, switchResponseVersion } = useChat();
   const { currentSessionId } = useApp();
@@ -16,6 +16,11 @@ const Message = ({ message, modelName, configName, index }) => {
   const versionCount = totalVersions || (versions ? versions.length : 1);
   const canGoPrev = versionIndex > 0;
   const canGoNext = versionIndex < versionCount - 1;
+  
+  // 判断是否有分支
+  const hasBranches = branches && branches.length > 0;
+  // 当前是否在显示某个分支
+  const isShowingBranch = currentBranchIndex !== undefined && currentBranchIndex >= 0;
   
   const handlePrevVersion = () => {
     if (canGoPrev) {
@@ -39,6 +44,11 @@ const Message = ({ message, modelName, configName, index }) => {
           <span className="message-author">{isUser ? '' : `${modelName} | ${configName}`}</span>
           <span className="message-time">
             {new Date(timestamp).toLocaleTimeString()}
+            {!isUser && isShowingBranch && 
+              <span className="branch-indicator" title="当前显示的是一个分支回复">
+                <FaCodeBranch style={{ marginLeft: '5px', fontSize: '12px' }} />
+              </span>
+            }
           </span>
         </div>
         <div className="message-text">
@@ -52,16 +62,19 @@ const Message = ({ message, modelName, configName, index }) => {
                   className={`nav-button ${canGoPrev ? '' : 'disabled'}`}
                   onClick={handlePrevVersion}
                   disabled={!canGoPrev}
-                  title="上一个回复"
+                  title="切换到上一个回复版本"
                 >
                   <FaChevronLeft />
                 </button>
-                <span className="version-indicator">{versionIndex + 1}/{versionCount}</span>
+                <span className="version-indicator" title="当前显示的回复版本/总回复版本数">
+                  {versionIndex + 1}/{versionCount}
+                  {hasBranches && ` (${branches.length}个分支)`}
+                </span>
                 <button 
                   className={`nav-button ${canGoNext ? '' : 'disabled'}`}
                   onClick={handleNextVersion}
                   disabled={!canGoNext}
-                  title="下一个回复"
+                  title="切换到下一个回复版本"
                 >
                   <FaChevronRight />
                 </button>
@@ -70,7 +83,7 @@ const Message = ({ message, modelName, configName, index }) => {
             <button 
               className="regenerate-button"
               onClick={() => regenerateResponse(currentSessionId, index)}
-              title="重新生成回复"
+              title="重新生成回复（将创建新的对话分支）"
             >
               <FaRedoAlt /> 重新生成
             </button>

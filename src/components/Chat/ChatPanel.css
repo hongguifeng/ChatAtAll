@@ -262,3 +262,43 @@
     text-align: center;
     color: #666;
   }
+
+  .nav-button:hover {
+    background-color: #e0e0e0;
+  }
+
+  .nav-button:active {
+    background-color: #d0d0d0;
+  }
+
+  .nav-button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .version-indicator {
+    font-size: 12px;
+    padding: 0 8px;
+    background-color: #f0f0f0;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+  }
+
+  /* 分支指示器样式 */
+  .branch-indicator {
+    display: inline-flex;
+    align-items: center;
+    color: #0084ff;
+  }
+
+  /* 空状态样式 */
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .empty-message {
+    text-align: center;
+    color: #999;
+  }
