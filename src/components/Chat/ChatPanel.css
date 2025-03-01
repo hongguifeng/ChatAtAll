@@ -284,6 +284,89 @@
     border-right: 1px solid #ddd;
   }
 
+  /* 编辑功能样式 */
+  .edit-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    min-width: 70px;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    color: #333;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .edit-button:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .edit-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    background-color: #fff;
+  }
+  
+  .user-message .edit-textarea {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+  }
+  
+  .edit-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .confirm-edit-button,
+  .cancel-edit-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .confirm-edit-button {
+    background-color: #52c41a;
+    border: 1px solid #52c41a;
+    color: white;
+  }
+  
+  .confirm-edit-button:hover {
+    background-color: #49ad17;
+  }
+  
+  .cancel-edit-button {
+    background-color: #f5f5f5;
+    border: 1px solid #d9d9d9;
+    color: #333;
+  }
+  
+  .cancel-edit-button:hover {
+    background-color: #e8e8e8;
+  }
+
+  .version-indicator {
+    font-size: 12px;
+    padding: 0 8px;
+    background-color: #f0f0f0;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+  }
+  
   /* 分支指示器样式 */
   .branch-indicator {
     display: inline-flex;
