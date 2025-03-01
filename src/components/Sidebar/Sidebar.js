@@ -14,7 +14,7 @@ const Sidebar = () => {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <h1>ChatGPT</h1>
+        <h1>ChatAtAll</h1>
         <div className="sidebar-actions">
           <button onClick={handleNewSession} className="action-button">
             <FaPlus />

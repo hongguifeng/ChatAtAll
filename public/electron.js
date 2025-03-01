@@ -98,16 +98,10 @@ function createWindow() {
           click() {
             dialog.showMessageBox(mainWindow, {
               title: '关于',
-              message: 'ChatGPT客户端应用',
+              message: 'ChatAtAll客户端应用',
               detail: '版本: 1.0.0\n基于Electron和React构建',
               buttons: ['确定'],
             });
-          },
-        },
-        {
-          label: '访问OpenAI官网',
-          click() {
-            shell.openExternal('https://openai.com');
           },
         },
       ],

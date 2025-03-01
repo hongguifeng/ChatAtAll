@@ -1,13 +1,10 @@
 {
-  "name": "chatgpt-electron-app",
+  "name": "ChatAtAll",
   "version": "1.0.0",
   "description": "ChatGPT客户端应用，基于Electron和React构建",
   "main": "public/electron.js",
   "homepage": "./",
-  "author": {
-    "name": "your name",
-    "email": "your.email@example.com"
-  },
+
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -47,7 +44,7 @@
     "wait-on": "^7.0.1"
   },
   "build": {
-    "appId": "com.example.chatgpt-electron-app",
+    "appId": "com.example.ChatAtAll",
     "win": {
       "target": [
         "nsis",

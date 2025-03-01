@@ -1,4 +1,4 @@
-# ChatGPT Electron 客户端
+# ChatAtAll 客户端
 
 ![Electron](https://img.shields.io/badge/Electron-24.1.2-47848F?logo=electron)
 ![React](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react)
