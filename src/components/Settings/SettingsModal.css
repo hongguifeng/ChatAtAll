@@ -81,7 +81,9 @@
   }
   
   .cancel-button,
-  .save-button {
+  .save-button,
+  .add-model-button,
+  .remove-model-button {
     padding: 8px 16px;
     border-radius: 4px;
     font-size: 14px;
@@ -94,8 +96,46 @@
     color: #666;
   }
   
-  .save-button {
+  .save-button,
+  .add-model-button {
     background-color: #0084ff;
     border: none;
     color: white;
+  }
+
+  .custom-model-input {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .custom-model-input input {
+    flex: 1;
+  }
+
+  .custom-models-list {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 8px;
+  }
+
+  .custom-model-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .custom-model-item:last-child {
+    border-bottom: none;
+  }
+
+  .remove-model-button {
+    background-color: #ff4d4f;
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
   }

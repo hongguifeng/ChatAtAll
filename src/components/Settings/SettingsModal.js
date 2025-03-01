@@ -6,7 +6,8 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
     apiKey: settings.apiKey || '',
     proxyUrl: settings.proxyUrl || '',
     model: settings.model || 'gpt-3.5-turbo',
-    customModel: settings.customModel || '',
+    customModels: settings.customModels || [],
+    newCustomModel: ''
   });
   
   const handleChange = (e) => {
@@ -16,23 +17,41 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
       [name]: value,
     });
   };
+
+  const handleAddCustomModel = () => {
+    if (formValues.newCustomModel.trim()) {
+      setFormValues({
+        ...formValues,
+        customModels: [...formValues.customModels, formValues.newCustomModel.trim()],
+        newCustomModel: ''
+      });
+    }
+  };
+
+  const handleRemoveCustomModel = (modelToRemove) => {
+    setFormValues({
+      ...formValues,
+      customModels: formValues.customModels.filter(model => model !== modelToRemove),
+      model: formValues.model === modelToRemove ? 'gpt-3.5-turbo' : formValues.model
+    });
+  };
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    const finalFormValues = {
-      ...formValues,
-      model: formValues.model === 'custom' ? formValues.customModel : formValues.model,
-    };
-    onSave(finalFormValues);
+    onSave(formValues);
   };
   
-  const models = [
+  const defaultModels = [
     { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
     { id: 'gpt-4', name: 'GPT-4' },
     { id: 'gpt-4o', name: 'GPT-4o' },
     { id: 'gpt-4o-mini', name: 'GPT-4o-mini' },
-    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-    { id: 'custom', name: '自定义模型' },
+    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' }
+  ];
+
+  const allModels = [
+    ...defaultModels,
+    ...formValues.customModels.map(model => ({ id: model, name: model }))
   ];
   
   return (
@@ -78,22 +97,47 @@ const SettingsModal = ({ settings, onSave, onClose }) => {
               value={formValues.model}
               onChange={handleChange}
             >
-              {models.map((model) => (
+              {allModels.map((model) => (
                 <option key={model.id} value={model.id}>
                   {model.name}
                 </option>
               ))}
             </select>
-            {formValues.model === 'custom' && (
+          </div>
+
+          <div className="form-group">
+            <label>自定义模型管理</label>
+            <div className="custom-model-input">
               <input
                 type="text"
-                id="customModel"
-                name="customModel"
-                value={formValues.customModel}
+                name="newCustomModel"
+                value={formValues.newCustomModel}
                 onChange={handleChange}
-                placeholder="请输入自定义模型名称"
-                className="mt-2"
+                placeholder="输入自定义模型名称"
               />
+              <button
+                type="button"
+                onClick={handleAddCustomModel}
+                className="add-model-button"
+              >
+                添加
+              </button>
+            </div>
+            {formValues.customModels.length > 0 && (
+              <div className="custom-models-list">
+                {formValues.customModels.map((model) => (
+                  <div key={model} className="custom-model-item">
+                    <span>{model}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCustomModel(model)}
+                      className="remove-model-button"
+                    >
+                      删除
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
           

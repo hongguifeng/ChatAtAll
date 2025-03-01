@@ -15,6 +15,7 @@ function App() {
     apiKey: '',
     proxyUrl: '',
     model: 'gpt-3.5-turbo',
+    customModels: []
   });
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
