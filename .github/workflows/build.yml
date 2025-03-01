@@ -37,11 +37,12 @@ jobs:
       - name: Build React app
         env:
           NODE_OPTIONS: "--max_old_space_size=4096"
+        shell: bash
         run: |
           npm cache clean --force
           if [ "$RUNNER_OS" == "Windows" ]; then
-            rmdir /s /q node_modules 2> nul || true
-            rmdir /s /q build 2> nul || true
+            rm -rf node_modules
+            rm -rf build
           else
             rm -rf node_modules
             rm -rf build
