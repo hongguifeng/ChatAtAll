@@ -28,6 +28,31 @@ const Message = ({ message, modelName, configName, index }) => {
   // 当前是否在显示某个分支
   const isShowingBranch = currentBranchIndex !== undefined && currentBranchIndex >= 0;
   
+  // 获取当前消息或版本的模型和配置名称
+  const getCurrentModelAndConfig = () => {
+    if (isUser) {
+      // 用户消息使用传入的当前值
+      return { displayModelName: modelName, displayConfigName: configName };
+    }
+    
+    // 如果有多个版本，从当前版本获取
+    if (versions && versions.length > 0 && versionIndex >= 0 && versionIndex < versions.length) {
+      const currentVersion = versions[versionIndex];
+      return { 
+        displayModelName: currentVersion.modelName || message.modelName || modelName, 
+        displayConfigName: currentVersion.configName || message.configName || configName 
+      };
+    }
+    
+    // 从消息本身获取
+    return { 
+      displayModelName: message.modelName || modelName, 
+      displayConfigName: message.configName || configName 
+    };
+  };
+  
+  const { displayModelName, displayConfigName } = getCurrentModelAndConfig();
+  
   const handlePrevVersion = () => {
     if (canGoPrev) {
       if (isUser) {
@@ -54,9 +79,10 @@ const Message = ({ message, modelName, configName, index }) => {
     setEditedContent(content);
   };
 
-  // 提交编辑
+  // 提交编辑 - 使用当前选择的模型和配置
   const handleSubmitEdit = () => {
-    editMessage(currentSessionId, index, editedContent);
+    // 传递当前界面上选择的模型和配置名称，而不是消息原始的配置
+    editMessage(currentSessionId, index, editedContent, configName, modelName);
     setIsEditing(false);
   };
 
@@ -64,6 +90,11 @@ const Message = ({ message, modelName, configName, index }) => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditedContent(content);
+  };
+  
+  // 重新生成 - 使用当前选择的模型和配置
+  const handleRegenerate = () => {
+    regenerateResponse(currentSessionId, index, configName, modelName);
   };
   
   // 代码高亮组件
@@ -136,7 +167,7 @@ const Message = ({ message, modelName, configName, index }) => {
       </div>
       <div className="message-content">
         <div className="message-header">
-          <span className="message-author">{isUser ? '' : `${modelName} | ${configName}`}</span>
+          <span className="message-author">{isUser ? '' : `${displayModelName} | ${displayConfigName}`}</span>
           <span className="message-time">
             {new Date(timestamp).toLocaleTimeString()}
             {!isUser && isShowingBranch && 
@@ -247,8 +278,8 @@ const Message = ({ message, modelName, configName, index }) => {
             )}
             <button 
               className="regenerate-button"
-              onClick={() => regenerateResponse(currentSessionId, index)}
-              title="重新生成回复（将创建新的对话分支）"
+              onClick={handleRegenerate}
+              title="使用当前选择的模型重新生成回复"
             >
               <FaRedoAlt /> 重新生成
             </button>

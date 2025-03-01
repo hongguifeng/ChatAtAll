@@ -33,7 +33,9 @@ export function ChatProvider({ children }) {
         isStreaming: true, // 标记为正在流式输出
         versions: [], // 存储所有生成的回复版本
         currentVersionIndex: 0, // 当前显示的版本索引
-        totalVersions: 1 // 总版本数
+        totalVersions: 1, // 总版本数
+        configName: config.name, // 存储当前使用的API组名称
+        modelName: config.model // 存储当前使用的模型名称
       };
       
       // 添加初始空回复到历史记录
@@ -70,7 +72,12 @@ export function ChatProvider({ children }) {
         ...assistantMessage,
         content: fullContent,
         isStreaming: false,
-        versions: [{ content: fullContent, timestamp: Date.now() }]
+        versions: [{ 
+          content: fullContent, 
+          timestamp: Date.now(),
+          configName: config.name, // 存储API组名称在版本信息中
+          modelName: config.model  // 存储模型名称在版本信息中
+        }]
       };
       
       const finalMessages = [
@@ -90,9 +97,16 @@ export function ChatProvider({ children }) {
           content: `发生错误: ${error.message}。请检查您的API密钥和网络连接。`, 
           timestamp: Date.now(),
           isError: true,
-          versions: [{ content: `发生错误: ${error.message}。请检查您的API密钥和网络连接。`, timestamp: Date.now() }],
+          versions: [{ 
+            content: `发生错误: ${error.message}。请检查您的API密钥和网络连接。`, 
+            timestamp: Date.now(),
+            configName: selectedConfig?.name || "未知", // 存储API组名称
+            modelName: selectedConfig?.model || "未知"  // 存储模型名称
+          }],
           currentVersionIndex: 0,
-          totalVersions: 1
+          totalVersions: 1,
+          configName: selectedConfig?.name || "未知", // 存储API组名称
+          modelName: selectedConfig?.model || "未知"  // 存储模型名称
         },
       ];
       callback(errorMessages);
@@ -102,7 +116,7 @@ export function ChatProvider({ children }) {
   };
 
   // 添加重新生成回复功能
-  const regenerateResponse = async (sessionId, messageIndex = -1) => {
+  const regenerateResponse = async (sessionId, messageIndex = -1, currentConfigName = null, currentModelName = null) => {
     if (!app || !app.sessions) return;
     
     const session = app.sessions.find(s => s.id === sessionId);
@@ -140,8 +154,23 @@ export function ChatProvider({ children }) {
       const previousMessages = session.messages.slice(0, correspondingUserMessageIndex);
       
       // 获取与会话相关的配置和模型
-      const configIndex = session.configIndex !== undefined ? session.configIndex : 0;
-      const modelName = session.modelName || (settings.apiConfigs[configIndex]?.model || 'gpt-3.5-turbo');
+      // 如果传入了当前UI选择的模型和配置，则优先使用这些
+      let configIndex = session.configIndex !== undefined ? session.configIndex : 0;
+      let modelName = session.modelName || (settings.apiConfigs[configIndex]?.model || 'gpt-3.5-turbo');
+      
+      // 如果传入了当前选择的配置名称，找到对应的索引
+      if (currentConfigName) {
+        const newConfigIndex = settings.apiConfigs.findIndex(config => config.name === currentConfigName);
+        if (newConfigIndex !== -1) {
+          configIndex = newConfigIndex;
+        }
+      }
+      
+      // 如果传入了当前选择的模型名称，使用它
+      if (currentModelName) {
+        modelName = currentModelName;
+      }
+      
       const selectedConfig = settings.apiConfigs[configIndex] || settings.apiConfigs[0] || settings;
       const configWithModel = {
         ...selectedConfig,
@@ -168,6 +197,8 @@ export function ChatProvider({ children }) {
             content: currentVersion.content,
             timestamp: currentVersion.timestamp,
             subsequentMessages: [...subsequentMessages],
+            configName: currentVersion.configName, // 保存配置名称
+            modelName: currentVersion.modelName    // 保存模型名称
           });
         }
       }
@@ -183,7 +214,9 @@ export function ChatProvider({ children }) {
         branches: targetAssistantMessage.branches || [],
         currentVersionIndex: 0, // 新版本将是默认显示的版本（索引0）
         currentBranchIndex: -1, // 当前没有显示任何分支
-        totalVersions: targetAssistantMessage.versions ? targetAssistantMessage.versions.length + 1 : 1
+        totalVersions: targetAssistantMessage.versions ? targetAssistantMessage.versions.length + 1 : 1,
+        configName: configWithModel.name, // 存储当前使用的API组名称
+        modelName: configWithModel.model // 存储当前使用的模型名称
       };
       
       // 裁剪消息，只保留到当前要重新生成的AI消息
@@ -201,6 +234,7 @@ export function ChatProvider({ children }) {
         configWithModel.apiKey,
         configWithModel.proxyUrl,
         configWithModel.model,
+        // 只传递到用户消息为止的消息历史
         [...previousMessages, userMessage].map(msg => ({ role: msg.role, content: msg.content })),
         (chunk, content) => {
           fullContent = content; // 保存完整内容
@@ -210,16 +244,25 @@ export function ChatProvider({ children }) {
             content: content,
           };
           
-          const updatedMessages = [...currentMessages];
-          updatedMessages[updatedMessages.length - 1] = updatedAssistantMessage;
-          app.updateSessionMessages(sessionId, updatedMessages, configIndex, modelName);
+          const latestMessages = [
+            ...previousMessages, 
+            userMessage,
+            updatedAssistantMessage
+          ];
+          
+          app.updateSessionMessages(sessionId, latestMessages, configIndex, modelName);
         }
       );
       
       // 流式输出完成后，更新最终消息并移除流式标记
       // 将新回复添加到versions数组的前面（因为我们想要显示最新的回复）
       const newVersions = [
-        { content: fullContent, timestamp: Date.now() },
+        { 
+          content: fullContent, 
+          timestamp: Date.now(),
+          configName: configWithModel.name, // 存储API组名称在版本信息中
+          modelName: configWithModel.model  // 存储模型名称在版本信息中
+        },
         ...(targetAssistantMessage.versions || [])
       ];
       
@@ -228,39 +271,38 @@ export function ChatProvider({ children }) {
         content: fullContent,
         isStreaming: false,
         versions: newVersions,
-        branches: targetAssistantMessage.branches || [],
-        currentVersionIndex: 0, // 默认显示最新生成的回复
-        currentBranchIndex: -1, // 当前没有显示任何分支
-        totalVersions: newVersions.length
+        currentVersionIndex: 0, // 显示最新的版本
+        totalVersions: newVersions.length,
+        configName: configWithModel.name, // 存储当前使用的API组名称
+        modelName: configWithModel.model // 存储当前使用的模型名称
       };
       
-      const finalMessages = [...currentMessages];
-      finalMessages[finalMessages.length - 1] = finalAssistantMessage;
+      const finalMessages = [
+        ...previousMessages,
+        userMessage,
+        finalAssistantMessage
+      ];
+      
       app.updateSessionMessages(sessionId, finalMessages, configIndex, modelName);
     } catch (error) {
       console.error('重新生成回复失败:', error);
-      // 处理错误情况
-      const session = app.sessions.find(s => s.id === sessionId);
-      if (session && session.messages.length > 0) {
-        const lastMessage = session.messages[session.messages.length - 1];
-        if (lastMessage.role === 'assistant') {
-          const errorMessage = {
-            ...lastMessage,
-            content: `重新生成回复失败: ${error.message}`,
-            isError: true,
-            isStreaming: false
-          };
-          const updatedMessages = [...session.messages.slice(0, -1), errorMessage];
-          app.updateSessionMessages(sessionId, updatedMessages);
+      // 如果出错，恢复原来的消息
+      const errorMessages = [
+        ...session.messages.slice(0, messageIndex),
+        {
+          ...session.messages[messageIndex],
+          content: `重新生成失败: ${error.message}。请检查您的API密钥和网络连接。`,
+          isError: true
         }
-      }
+      ];
+      app.updateSessionMessages(sessionId, errorMessages, session.configIndex, session.modelName);
     } finally {
       setIsLoading(false);
     }
   };
 
   // 编辑用户消息并重新生成回复
-  const editMessage = async (sessionId, messageIndex, newContent) => {
+  const editMessage = async (sessionId, messageIndex, newContent, currentConfigName = null, currentModelName = null) => {
     if (!app || !app.sessions) return;
     
     const session = app.sessions.find(s => s.id === sessionId);
@@ -363,7 +405,9 @@ export function ChatProvider({ children }) {
         branches: aiMessage.branches || [],
         currentVersionIndex: 0,
         currentBranchIndex: -1,
-        totalVersions: 1
+        totalVersions: 1,
+        configName: aiMessage.configName, // 复制API组名称
+        modelName: aiMessage.modelName // 复制模型名称
       };
       
       // 更新消息数组，保留到用户消息，添加新的AI回复消息，移除后续消息
@@ -375,8 +419,23 @@ export function ChatProvider({ children }) {
       app.updateSessionMessages(sessionId, updatedMessages);
       
       // 获取与会话相关的配置和模型
-      const configIndex = session.configIndex !== undefined ? session.configIndex : 0;
-      const modelName = session.modelName || (settings.apiConfigs[configIndex]?.model || 'gpt-3.5-turbo');
+      // 如果传入了当前UI选择的模型和配置，则优先使用这些
+      let configIndex = session.configIndex !== undefined ? session.configIndex : 0;
+      let modelName = session.modelName || (settings.apiConfigs[configIndex]?.model || 'gpt-3.5-turbo');
+      
+      // 如果传入了当前选择的配置名称，找到对应的索引
+      if (currentConfigName) {
+        const newConfigIndex = settings.apiConfigs.findIndex(config => config.name === currentConfigName);
+        if (newConfigIndex !== -1) {
+          configIndex = newConfigIndex;
+        }
+      }
+      
+      // 如果传入了当前选择的模型名称，使用它
+      if (currentModelName) {
+        modelName = currentModelName;
+      }
+      
       const selectedConfig = settings.apiConfigs[configIndex] || settings.apiConfigs[0] || settings;
       const configWithModel = {
         ...selectedConfig,
@@ -412,11 +471,18 @@ export function ChatProvider({ children }) {
         ...newAssistantMessage,
         content: fullContent,
         isStreaming: false,
-        versions: [{ content: fullContent, timestamp: Date.now() }],
+        versions: [{ 
+          content: fullContent, 
+          timestamp: Date.now(),
+          configName: configWithModel.name, // 存储API组名称在版本信息中
+          modelName: configWithModel.model  // 存储模型名称在版本信息中
+        }],
         branches: aiMessage.branches || [],
         currentVersionIndex: 0,
         currentBranchIndex: -1,
-        totalVersions: 1
+        totalVersions: 1,
+        configName: configWithModel.name, // 存储当前使用的API组名称
+        modelName: configWithModel.model  // 存储当前使用的模型名称
       };
       
       // 更新消息
@@ -475,21 +541,31 @@ export function ChatProvider({ children }) {
       if (existingBranchIndex >= 0) {
         // 更新现有分支的后续消息
         targetMessage.branches[existingBranchIndex].subsequentMessages = [...subsequentMessages];
+        // 确保分支中包含配置和模型信息
+        if (!targetMessage.branches[existingBranchIndex].configName) {
+          targetMessage.branches[existingBranchIndex].configName = currentVersion.configName || targetMessage.configName;
+        }
+        if (!targetMessage.branches[existingBranchIndex].modelName) {
+          targetMessage.branches[existingBranchIndex].modelName = currentVersion.modelName || targetMessage.modelName;
+        }
       } else {
-        // 创建新分支
+        // 创建新分支，包含配置和模型信息
         targetMessage.branches.push({
           content: currentVersion.content,
           timestamp: currentVersion.timestamp,
           subsequentMessages: [...subsequentMessages],
+          configName: currentVersion.configName || targetMessage.configName, // 保存配置名称
+          modelName: currentVersion.modelName || targetMessage.modelName     // 保存模型名称
         });
       }
     }
     
     // 查找是否有与目标版本关联的分支
     let newSubsequentMessages = [];
+    const targetVersion = targetMessage.versions[versionIndex];
     const hasBranch = targetMessage.branches && 
                       targetMessage.branches.some((branch, idx) => {
-                        if (branch.content === targetMessage.versions[versionIndex].content) {
+                        if (branch.content === targetVersion.content) {
                           newSubsequentMessages = branch.subsequentMessages;
                           // 保存当前分支索引
                           targetMessage.currentBranchIndex = idx;
@@ -501,7 +577,7 @@ export function ChatProvider({ children }) {
     // 更新当前显示的版本索引和内容
     const updatedMessage = {
       ...targetMessage,
-      content: targetMessage.versions[versionIndex].content,
+      content: targetVersion.content,
       currentVersionIndex: versionIndex,
       // 如果没有找到匹配的分支，设置为-1
       currentBranchIndex: hasBranch ? targetMessage.currentBranchIndex : -1
