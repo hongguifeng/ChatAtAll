@@ -8,7 +8,7 @@ import './ChatPanel.css';
 
 const ChatPanel = ({ session }) => {
   const { updateSessionMessages } = useApp();
-  const { isLoading, sendMessage } = useChat();
+  const { isLoading, sendMessage, isStreaming } = useChat();
   const { settings } = useSettings();
   const [inputValue, setInputValue] = useState('');
   const [selectedConfigIndex, setSelectedConfigIndex] = useState(0);
@@ -142,7 +142,7 @@ const ChatPanel = ({ session }) => {
         </div>
       </div>
       
-      <div className="messages-container">
+      <div className={`messages-container ${isStreaming ? 'is-streaming' : ''}`}>
         {session.messages.length === 0 ? (
           <div className="welcome-message">
             <h2>欢迎使用ChatGPT客户端</h2>
@@ -169,6 +169,7 @@ const ChatPanel = ({ session }) => {
         onChange={setInputValue}
         onSend={handleSendMessage}
         isLoading={isLoading}
+        isStreaming={isStreaming}
       />
     </div>
   );

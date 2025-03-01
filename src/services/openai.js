@@ -33,7 +33,7 @@ export async function fetchChatCompletion(apiKey, proxyUrl, model, messages) {
 }
 
 // 流式API调用
-export async function fetchStreamingChatCompletion(apiKey, proxyUrl, model, messages, onChunk) {
+export async function fetchStreamingChatCompletion(apiKey, proxyUrl, model, messages, onChunk, signal) {
   const baseUrl = proxyUrl || 'https://api.openai.com';
   const endpoint = `${baseUrl}/v1/chat/completions`;
 
@@ -50,6 +50,7 @@ export async function fetchStreamingChatCompletion(apiKey, proxyUrl, model, mess
         temperature: 0.7,
         stream: true,
       }),
+      signal, // 传入用于取消请求的信号
     });
 
     if (!response.ok) {
@@ -96,10 +97,6 @@ export async function fetchStreamingChatCompletion(apiKey, proxyUrl, model, mess
     return fullContent;
   } catch (error) {
     console.error('OpenAI API 调用失败:', error);
-    throw new Error(
-      error.response
-        ? `API错误: ${error.response.status} - ${error.response.data?.error?.message}`
-        : '网络错误，无法连接到API'
-    );
+    throw error; // 直接抛出错误，让调用方处理AbortError
   }
 }

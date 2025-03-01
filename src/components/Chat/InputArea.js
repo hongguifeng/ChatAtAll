@@ -1,8 +1,10 @@
 import React, { useRef, useEffect } from 'react';
-import { FaPaperPlane } from 'react-icons/fa';
+import { FaPaperPlane, FaStop } from 'react-icons/fa';
+import { useChat } from '../../contexts/ChatContext';
 
-const InputArea = ({ value, onChange, onSend, isLoading }) => {
+const InputArea = ({ value, onChange, onSend, isLoading, isStreaming }) => {
   const textareaRef = useRef(null);
+  const { stopGenerating } = useChat();
   
   // 自动调整文本区高度
   useEffect(() => {
@@ -19,6 +21,16 @@ const InputArea = ({ value, onChange, onSend, isLoading }) => {
     }
   };
 
+  const handleButtonClick = () => {
+    if (isStreaming) {
+      // 如果正在流式生成，点击按钮停止生成
+      stopGenerating();
+    } else {
+      // 如果不是流式生成，则发送消息
+      onSend();
+    }
+  };
+
   return (
     <div className="input-area">
       <textarea
@@ -31,11 +43,22 @@ const InputArea = ({ value, onChange, onSend, isLoading }) => {
         rows={1}
       />
       <button
-        onClick={onSend}
-        disabled={isLoading || !value.trim()}
-        className="send-button"
+        onClick={handleButtonClick}
+        disabled={(isLoading && !isStreaming) || (!isStreaming && !value.trim())}
+        className={`send-button ${isStreaming ? 'stop-button' : ''}`}
       >
-        <FaPaperPlane />
+        {isStreaming ? (
+          <>
+            <FaStop />
+            <span className="loading-dots">
+              <span className="dot"></span>
+              <span className="dot"></span>
+              <span className="dot"></span>
+            </span>
+          </>
+        ) : (
+          <FaPaperPlane />
+        )}
       </button>
     </div>
   );

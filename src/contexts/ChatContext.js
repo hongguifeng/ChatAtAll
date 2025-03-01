@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useRef } from 'react';
 import { useSettings } from './SettingsContext';
 import { useApp } from './AppContext';
 import { fetchChatCompletion, fetchStreamingChatCompletion } from '../services/openai';
@@ -7,12 +7,18 @@ const ChatContext = createContext();
 
 export function ChatProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const { settings } = useSettings();
   const app = useApp();
+  const abortControllerRef = useRef(null);
 
   const sendMessage = async (message, sessionMessages, selectedConfig, callback) => {
     setIsLoading(true);
+    setIsStreaming(true);
     try {
+      // 创建新的AbortController用于取消请求
+      abortControllerRef.current = new AbortController();
+      
       // 添加用户消息到历史记录
       const updatedMessages = [
         ...sessionMessages,
@@ -63,7 +69,8 @@ export function ChatProvider({ children }) {
           ];
           
           callback(latestMessages);
-        }
+        },
+        abortControllerRef.current.signal
       );
       
       // 流式输出完成后，更新最终消息并移除流式标记
@@ -87,6 +94,12 @@ export function ChatProvider({ children }) {
       
       callback(finalMessages);
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('请求被用户取消');
+        // 如果是因为用户取消导致的中断，不显示错误消息，而是保留当前生成的内容
+        return;
+      }
+
       console.error('发送消息失败:', error);
       // 添加错误消息
       const errorMessages = [
@@ -112,6 +125,17 @@ export function ChatProvider({ children }) {
       callback(errorMessages);
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  // 停止AI生成回复
+  const stopGenerating = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsStreaming(false);
     }
   };
 
@@ -123,6 +147,10 @@ export function ChatProvider({ children }) {
     if (!session || session.messages.length < 2) return;
     
     setIsLoading(true);
+    setIsStreaming(true);
+    
+    // 创建新的AbortController用于取消请求
+    abortControllerRef.current = new AbortController();
     
     try {
       // 如果提供了具体的messageIndex，就使用它；否则使用最后一条消息
@@ -251,7 +279,8 @@ export function ChatProvider({ children }) {
           ];
           
           app.updateSessionMessages(sessionId, latestMessages, configIndex, modelName);
-        }
+        },
+        abortControllerRef.current.signal
       );
       
       // 流式输出完成后，更新最终消息并移除流式标记
@@ -285,6 +314,11 @@ export function ChatProvider({ children }) {
       
       app.updateSessionMessages(sessionId, finalMessages, configIndex, modelName);
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('重新生成请求被用户取消');
+        return;
+      }
+      
       console.error('重新生成回复失败:', error);
       // 如果出错，恢复原来的消息
       const errorMessages = [
@@ -298,6 +332,8 @@ export function ChatProvider({ children }) {
       app.updateSessionMessages(sessionId, errorMessages, session.configIndex, session.modelName);
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -313,6 +349,10 @@ export function ChatProvider({ children }) {
     if (message.role !== 'user') return;
     
     setIsLoading(true);
+    setIsStreaming(true);
+    
+    // 创建新的AbortController用于取消请求
+    abortControllerRef.current = new AbortController();
     
     try {
       // 复制消息数组
@@ -463,7 +503,8 @@ export function ChatProvider({ children }) {
           const latestMessages = [...updatedMessages];
           latestMessages[aiResponseIndex] = updatedAssistantMessage;
           app.updateSessionMessages(sessionId, latestMessages, configIndex, modelName);
-        }
+        },
+        abortControllerRef.current.signal
       );
       
       // 流式输出完成后，更新最终消息
@@ -490,10 +531,17 @@ export function ChatProvider({ children }) {
       finalMessages[aiResponseIndex] = finalAssistantMessage;
       app.updateSessionMessages(sessionId, finalMessages, configIndex, modelName);
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('编辑消息后的请求被用户取消');
+        return;
+      }
+      
       console.error('编辑消息失败:', error);
       // 处理错误
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -701,11 +749,13 @@ export function ChatProvider({ children }) {
   return (
     <ChatContext.Provider value={{ 
       isLoading, 
+      isStreaming,
       sendMessage, 
       regenerateResponse, 
       switchResponseVersion, 
       editMessage, 
-      switchUserMessageVersion 
+      switchUserMessageVersion,
+      stopGenerating
     }}>
       {children}
     </ChatContext.Provider>
