@@ -8,7 +8,7 @@ export function ChatProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const { settings } = useSettings();
 
-  const sendMessage = async (message, sessionMessages, callback) => {
+  const sendMessage = async (message, sessionMessages, selectedConfig, callback) => {
     setIsLoading(true);
     try {
       // 添加用户消息到历史记录
@@ -20,11 +20,12 @@ export function ChatProvider({ children }) {
       // 首先更新UI以显示用户消息
       callback(updatedMessages);
       
-      // 调用API获取回复
+      // 使用选定的配置调用API获取回复
+      const config = selectedConfig || settings.apiConfigs[0] || settings;
       const response = await fetchChatCompletion(
-        settings.apiKey,
-        settings.proxyUrl,
-        settings.model,
+        config.apiKey,
+        config.proxyUrl,
+        config.model,
         updatedMessages.map(msg => ({ role: msg.role, content: msg.content }))
       );
       

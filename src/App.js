@@ -85,10 +85,14 @@ function App() {
   };
 
   // 更新当前会话的消息
-  const updateSessionMessages = (sessionId, messages) => {
+  const updateSessionMessages = (sessionId, messages, configIndex) => {
     const updatedSessions = sessions.map(session => {
       if (session.id === sessionId) {
-        return { ...session, messages };
+        return { 
+          ...session, 
+          messages,
+          configIndex: configIndex !== undefined ? configIndex : session.configIndex
+        };
       }
       return session;
     });
