@@ -282,12 +282,43 @@ export function ChatProvider({ children }) {
       return;
     }
     
-    // 查找是否有与该版本关联的分支
-    let subsequentMessages = [];
+    // 保存当前分支的后续消息（如果有的话）
+    // 获取当前版本和后续消息
+    const currentVersionIndex = targetMessage.currentVersionIndex || 0;
+    const currentVersion = targetMessage.versions[currentVersionIndex];
+    const subsequentMessages = messages.slice(targetMessageIndex + 1);
+    
+    // 如果当前版本有后续消息，保存为分支
+    if (subsequentMessages.length > 0) {
+      // 初始化分支数组（如果不存在）
+      if (!targetMessage.branches) {
+        targetMessage.branches = [];
+      }
+      
+      // 检查是否已存在相同内容的分支
+      const existingBranchIndex = targetMessage.branches.findIndex(branch => 
+        branch.content === currentVersion.content
+      );
+      
+      if (existingBranchIndex >= 0) {
+        // 更新现有分支的后续消息
+        targetMessage.branches[existingBranchIndex].subsequentMessages = [...subsequentMessages];
+      } else {
+        // 创建新分支
+        targetMessage.branches.push({
+          content: currentVersion.content,
+          timestamp: currentVersion.timestamp,
+          subsequentMessages: [...subsequentMessages],
+        });
+      }
+    }
+    
+    // 查找是否有与目标版本关联的分支
+    let newSubsequentMessages = [];
     const hasBranch = targetMessage.branches && 
                       targetMessage.branches.some((branch, idx) => {
                         if (branch.content === targetMessage.versions[versionIndex].content) {
-                          subsequentMessages = branch.subsequentMessages;
+                          newSubsequentMessages = branch.subsequentMessages;
                           // 保存当前分支索引
                           targetMessage.currentBranchIndex = idx;
                           return true;
@@ -308,10 +339,10 @@ export function ChatProvider({ children }) {
     messages[targetMessageIndex] = updatedMessage;
     
     // 根据是否有分支，决定是否添加后续消息
-    if (hasBranch && subsequentMessages.length > 0) {
+    if (hasBranch && newSubsequentMessages.length > 0) {
       // 截断到当前消息，然后添加分支中的后续消息
       const trimmedMessages = messages.slice(0, targetMessageIndex + 1);
-      app.updateSessionMessages(sessionId, [...trimmedMessages, ...subsequentMessages]);
+      app.updateSessionMessages(sessionId, [...trimmedMessages, ...newSubsequentMessages]);
     } else {
       // 如果没有分支，则只更新当前消息，并移除所有后续消息
       app.updateSessionMessages(sessionId, messages.slice(0, targetMessageIndex + 1));
